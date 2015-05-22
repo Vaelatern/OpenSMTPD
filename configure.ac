@@ -505,13 +505,227 @@ int main(int argc, char **argv) {
 ])
 #l1120
 
-#l1124 (slightly customized around fmt_scaled scan_scaled checks)
-AC_SEARCH_LIBS([basename], [gen], [AC_DEFINE([HAVE_BASENAME], [1],
-	[Define if you have the basename function.])])
+
+# Search for asr (based on zlib checks)
+dnl asr is required
+AC_ARG_WITH([asr-dir],
+	[  --with-asr-dir=PATH		Use asr in PATH],
+	[ if test "x$withval" = "xno" ; then
+		AC_MSG_ERROR([*** asr is required ***])
+	  elif test "x$withval" != "xyes"; then
+		if test -d "$withval/lib"; then
+			if test -n "${need_dash_r}"; then
+				LDFLAGS="-L${withval}/lib -R${withval}/lib ${LDFLAGS}"
+			else
+				LDFLAGS="-L${withval}/lib ${LDFLAGS}"
+			fi
+		else
+			if test -n "${need_dash_r}"; then
+				LDFLAGS="-L${withval} -R${withval} ${LDFLAGS}"
+			else
+				LDFLAGS="-L${withval} ${LDFLAGS}"
+			fi
+		fi
+		if test -d "$withval/include"; then
+			CPPFLAGS="-I${withval}/include ${CPPFLAGS}"
+		else
+			CPPFLAGS="-I${withval} ${CPPFLAGS}"
+		fi
+	fi ]
+)
+
+AC_CHECK_HEADER([asr.h], ,[AC_MSG_ERROR([*** asr.h missing - please install first or check config.log ***])],
+[#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>])
+AC_CHECK_LIB([asr], [asr_resolver], ,
+	[
+		saved_CPPFLAGS="$CPPFLAGS"
+		saved_LDFLAGS="$LDFLAGS"
+		save_LIBS="$LIBS"
+		dnl Check default asr install dir
+		if test -n "${need_dash_r}"; then
+			LDFLAGS="-L/usr/local/lib -R/usr/local/lib ${saved_LDFLAGS}"
+		else
+			LDFLAGS="-L/usr/local/lib ${saved_LDFLAGS}"
+		fi
+		CPPFLAGS="-I/usr/local/include ${saved_CPPFLAGS}"
+# don't add -lasr to LIBS, it's only added when needed
+#		LIBS="$LIBS -lasr"
+		AC_TRY_LINK_FUNC([asr_resolver], ,
+			[
+				AC_MSG_ERROR([*** libasr missing - please install first or check config.log ***])
+			]
+		)
+	]
+)
+
+LIBS="$LIBS ${SMTPDLIBS}"
+##end of chl
+
+
+#l2174 (customized, bu adding -lssl to LIBS)
+# Search for OpenSSL
+saved_CPPFLAGS="$CPPFLAGS"
+saved_LDFLAGS="$LDFLAGS"
+AC_ARG_WITH([ssl-dir],
+	[  --with-ssl-dir=PATH		Specify path to LibreSSL installation ],
+	[
+		if test "x$withval" != "xno" ; then
+			case "$withval" in
+				# Relative paths
+				./*|../*)	withval="`pwd`/$withval"
+			esac
+			if test -d "$withval/lib"; then
+				if test -n "${need_dash_r}"; then
+					LDFLAGS="-L${withval}/lib -R${withval}/lib ${LDFLAGS}"
+				else
+					LDFLAGS="-L${withval}/lib ${LDFLAGS}"
+				fi
+			elif test -d "$withval/lib64"; then
+				if test -n "${need_dash_r}"; then
+					LDFLAGS="-L${withval}/lib64 -R${withval}/lib64 ${LDFLAGS}"
+				else
+					LDFLAGS="-L${withval}/lib64 ${LDFLAGS}"
+				fi
+			else
+				if test -n "${need_dash_r}"; then
+					LDFLAGS="-L${withval} -R${withval} ${LDFLAGS}"
+				else
+					LDFLAGS="-L${withval} ${LDFLAGS}"
+				fi
+			fi
+			if test -d "$withval/include"; then
+				CPPFLAGS="-I${withval}/include ${CPPFLAGS}"
+			else
+				CPPFLAGS="-I${withval} ${CPPFLAGS}"
+			fi
+		fi
+	]
+)
+## XXX chl -lssl manually added
+LIBS="-lcrypto -lssl $LIBS"
+AC_TRY_LINK_FUNC([RAND_add], [AC_DEFINE([HAVE_OPENSSL], [1],
+	[Define if your ssl headers are included
+	with #include <openssl/header.h>])],
+	[
+		dnl Check default openssl install dir
+		if test -n "${need_dash_r}"; then
+			LDFLAGS="-L/usr/local/ssl/lib -R/usr/local/ssl/lib ${saved_LDFLAGS}"
+		else
+			LDFLAGS="-L/usr/local/ssl/lib ${saved_LDFLAGS}"
+		fi
+		CPPFLAGS="-I/usr/local/ssl/include ${saved_CPPFLAGS}"
+		AC_CHECK_HEADER([openssl/opensslv.h], ,
+		    [AC_MSG_ERROR([*** LibreSSL headers missing - please install first or check config.log ***])])
+		AC_TRY_LINK_FUNC([RAND_add], [AC_DEFINE([HAVE_OPENSSL])],
+			[
+				AC_MSG_ERROR([*** Can't find recent LibreSSL libcrypto (see config.log for details) ***])
+			]
+		)
+	]
+)
+
+# Determine OpenSSL header version
+AC_MSG_CHECKING([LibreSSL header version])
+AC_RUN_IFELSE(
+	[AC_LANG_PROGRAM([[
+#include <stdio.h>
+#include <string.h>
+#include <openssl/opensslv.h>
+#define DATA "conftest.sslincver"
+	]], [[
+	FILE *fd;
+	int rc;
+
+	fd = fopen(DATA,"w");
+	if(fd == NULL)
+		exit(1);
+
+	if ((rc = fprintf(fd ,"%x (%s)\n", OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_TEXT)) <0)
+		exit(1);
+
+	exit(0);
+	]])],
+	[
+		ssl_header_ver=`cat conftest.sslincver`
+		AC_MSG_RESULT([$ssl_header_ver])
+	],
+	[
+		AC_MSG_RESULT([not found])
+		AC_MSG_ERROR([LibreSSL version header not found.])
+	],
+	[
+		AC_MSG_WARN([cross compiling: not checking])
+	]
+)
+
+# Determine OpenSSL library version
+AC_MSG_CHECKING([LibreSSL library version])
+AC_RUN_IFELSE(
+	[AC_LANG_PROGRAM([[
+#include <stdio.h>
+#include <string.h>
+#include <openssl/opensslv.h>
+#include <openssl/crypto.h>
+#define DATA "conftest.ssllibver"
+	]], [[
+	FILE *fd;
+	int rc;
+
+	fd = fopen(DATA,"w");
+	if(fd == NULL)
+		exit(1);
+
+	if ((rc = fprintf(fd ,"%x (%s)\n", SSLeay(), SSLeay_version(SSLEAY_VERSION))) <0)
+		exit(1);
+
+	exit(0);
+	]])],
+	[
+		ssl_library_ver=`cat conftest.ssllibver`
+		AC_MSG_RESULT([$ssl_library_ver])
+	],
+	[
+		AC_MSG_RESULT([not found])
+		AC_MSG_ERROR([LibreSSL library not found.])
+	],
+	[
+		AC_MSG_WARN([cross compiling: not checking])
+	]
+)
+
+AC_MSG_CHECKING([if programs using LibreSSL functions will link])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM([[ #include <openssl/evp.h> ]],
+	[[ SSLeay_add_all_algorithms(); ]])],
+	[
+		AC_MSG_RESULT([yes])
+	],
+	[
+		AC_MSG_RESULT([no])
+		saved_LIBS="$LIBS"
+		LIBS="$LIBS -ldl"
+		AC_MSG_CHECKING([if programs using LibreSSL need -ldl])
+		AC_LINK_IFELSE(
+			[AC_LANG_PROGRAM([[ #include <openssl/evp.h> ]],
+			[[ SSLeay_add_all_algorithms(); ]])],
+			[
+				AC_MSG_RESULT([yes])
+			],
+			[
+				AC_MSG_RESULT([no])
+				LIBS="$saved_LIBS"
+			]
+		)
+	]
+)
+#l2371
+
 
 dnl zlib is required
-AC_ARG_WITH([zlib],
-	[  --with-zlib=PATH		Use zlib in PATH],
+AC_ARG_WITH([zlib-dir],
+	[  --with-zlib-dir=PATH		Use zlib in PATH],
 	[ if test "x$withval" = "xno" ; then
 		AC_MSG_ERROR([*** zlib is required ***])
 	  elif test "x$withval" != "xyes"; then
@@ -557,6 +771,13 @@ AC_CHECK_LIB([z], [deflate], ,
 		)
 	]
 )
+
+
+
+
+#l1124 (slightly customized around fmt_scaled scan_scaled checks)
+AC_SEARCH_LIBS([basename], [gen], [AC_DEFINE([HAVE_BASENAME], [1],
+	[Define if you have the basename function.])])
 
 dnl UnixWare 2.x
 AC_CHECK_FUNC([strcasecmp],
@@ -992,163 +1213,6 @@ if test "x$ac_cv_func_getaddrinfo" = "xyes" && \
 fi
 
 
-#l2174 (customized, bu adding -lssl to LIBS)
-# Search for OpenSSL
-saved_CPPFLAGS="$CPPFLAGS"
-saved_LDFLAGS="$LDFLAGS"
-AC_ARG_WITH([ssl-dir],
-	[  --with-ssl-dir=PATH		Specify path to LibreSSL installation ],
-	[
-		if test "x$withval" != "xno" ; then
-			case "$withval" in
-				# Relative paths
-				./*|../*)	withval="`pwd`/$withval"
-			esac
-			if test -d "$withval/lib"; then
-				if test -n "${need_dash_r}"; then
-					LDFLAGS="-L${withval}/lib -R${withval}/lib ${LDFLAGS}"
-				else
-					LDFLAGS="-L${withval}/lib ${LDFLAGS}"
-				fi
-			elif test -d "$withval/lib64"; then
-				if test -n "${need_dash_r}"; then
-					LDFLAGS="-L${withval}/lib64 -R${withval}/lib64 ${LDFLAGS}"
-				else
-					LDFLAGS="-L${withval}/lib64 ${LDFLAGS}"
-				fi
-			else
-				if test -n "${need_dash_r}"; then
-					LDFLAGS="-L${withval} -R${withval} ${LDFLAGS}"
-				else
-					LDFLAGS="-L${withval} ${LDFLAGS}"
-				fi
-			fi
-			if test -d "$withval/include"; then
-				CPPFLAGS="-I${withval}/include ${CPPFLAGS}"
-			else
-				CPPFLAGS="-I${withval} ${CPPFLAGS}"
-			fi
-		fi
-	]
-)
-## XXX chl -lssl manually added
-LIBS="-lcrypto -lssl $LIBS"
-AC_TRY_LINK_FUNC([RAND_add], [AC_DEFINE([HAVE_OPENSSL], [1],
-	[Define if your ssl headers are included
-	with #include <openssl/header.h>])],
-	[
-		dnl Check default openssl install dir
-		if test -n "${need_dash_r}"; then
-			LDFLAGS="-L/usr/local/ssl/lib -R/usr/local/ssl/lib ${saved_LDFLAGS}"
-		else
-			LDFLAGS="-L/usr/local/ssl/lib ${saved_LDFLAGS}"
-		fi
-		CPPFLAGS="-I/usr/local/ssl/include ${saved_CPPFLAGS}"
-		AC_CHECK_HEADER([openssl/opensslv.h], ,
-		    [AC_MSG_ERROR([*** LibreSSL headers missing - please install first or check config.log ***])])
-		AC_TRY_LINK_FUNC([RAND_add], [AC_DEFINE([HAVE_OPENSSL])],
-			[
-				AC_MSG_ERROR([*** Can't find recent LibreSSL libcrypto (see config.log for details) ***])
-			]
-		)
-	]
-)
-
-# Determine OpenSSL header version
-AC_MSG_CHECKING([LibreSSL header version])
-AC_RUN_IFELSE(
-	[AC_LANG_PROGRAM([[
-#include <stdio.h>
-#include <string.h>
-#include <openssl/opensslv.h>
-#define DATA "conftest.sslincver"
-	]], [[
-	FILE *fd;
-	int rc;
-
-	fd = fopen(DATA,"w");
-	if(fd == NULL)
-		exit(1);
-
-	if ((rc = fprintf(fd ,"%x (%s)\n", OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_TEXT)) <0)
-		exit(1);
-
-	exit(0);
-	]])],
-	[
-		ssl_header_ver=`cat conftest.sslincver`
-		AC_MSG_RESULT([$ssl_header_ver])
-	],
-	[
-		AC_MSG_RESULT([not found])
-		AC_MSG_ERROR([LibreSSL version header not found.])
-	],
-	[
-		AC_MSG_WARN([cross compiling: not checking])
-	]
-)
-
-# Determine OpenSSL library version
-AC_MSG_CHECKING([LibreSSL library version])
-AC_RUN_IFELSE(
-	[AC_LANG_PROGRAM([[
-#include <stdio.h>
-#include <string.h>
-#include <openssl/opensslv.h>
-#include <openssl/crypto.h>
-#define DATA "conftest.ssllibver"
-	]], [[
-	FILE *fd;
-	int rc;
-
-	fd = fopen(DATA,"w");
-	if(fd == NULL)
-		exit(1);
-
-	if ((rc = fprintf(fd ,"%x (%s)\n", SSLeay(), SSLeay_version(SSLEAY_VERSION))) <0)
-		exit(1);
-
-	exit(0);
-	]])],
-	[
-		ssl_library_ver=`cat conftest.ssllibver`
-		AC_MSG_RESULT([$ssl_library_ver])
-	],
-	[
-		AC_MSG_RESULT([not found])
-		AC_MSG_ERROR([LibreSSL library not found.])
-	],
-	[
-		AC_MSG_WARN([cross compiling: not checking])
-	]
-)
-
-AC_MSG_CHECKING([if programs using LibreSSL functions will link])
-AC_LINK_IFELSE(
-	[AC_LANG_PROGRAM([[ #include <openssl/evp.h> ]],
-	[[ SSLeay_add_all_algorithms(); ]])],
-	[
-		AC_MSG_RESULT([yes])
-	],
-	[
-		AC_MSG_RESULT([no])
-		saved_LIBS="$LIBS"
-		LIBS="$LIBS -ldl"
-		AC_MSG_CHECKING([if programs using LibreSSL need -ldl])
-		AC_LINK_IFELSE(
-			[AC_LANG_PROGRAM([[ #include <openssl/evp.h> ]],
-			[[ SSLeay_add_all_algorithms(); ]])],
-			[
-				AC_MSG_RESULT([yes])
-			],
-			[
-				AC_MSG_RESULT([no])
-				LIBS="$saved_LIBS"
-			]
-		)
-	]
-)
-#l2371
 
 ##chl
 EXPERIMENTAL_GCM_CRYPTO=no
@@ -2119,7 +2183,7 @@ AC_CHECK_MEMBERS([struct statfs.f_favail], , ,
 
 PRIVSEP_PATH=/var/empty
 AC_ARG_WITH([privsep-path],
-	[  --with-privsep-path=xxx	Path for privilege separation chroot (default=/var/empty)],
+	[  --with-privsep-path=PATH	Path for privilege separation chroot (default=/var/empty)],
 	[
 		if test -n "$withval"  &&  test "x$withval" != "xno"  &&  \
 		    test "x${withval}" != "xyes"; then
@@ -2580,62 +2644,6 @@ AC_SUBST([DB_LIB])
 
 LIBS="$save_LIBS"
 
-# Search for asr (based on zlib checks)
-dnl asr is required
-AC_ARG_WITH([asr],
-	[  --with-asr=PATH		Use asr in PATH],
-	[ if test "x$withval" = "xno" ; then
-		AC_MSG_ERROR([*** asr is required ***])
-	  elif test "x$withval" != "xyes"; then
-		if test -d "$withval/lib"; then
-			if test -n "${need_dash_r}"; then
-				LDFLAGS="-L${withval}/lib -R${withval}/lib ${LDFLAGS}"
-			else
-				LDFLAGS="-L${withval}/lib ${LDFLAGS}"
-			fi
-		else
-			if test -n "${need_dash_r}"; then
-				LDFLAGS="-L${withval} -R${withval} ${LDFLAGS}"
-			else
-				LDFLAGS="-L${withval} ${LDFLAGS}"
-			fi
-		fi
-		if test -d "$withval/include"; then
-			CPPFLAGS="-I${withval}/include ${CPPFLAGS}"
-		else
-			CPPFLAGS="-I${withval} ${CPPFLAGS}"
-		fi
-	fi ]
-)
-
-AC_CHECK_HEADER([asr.h], ,[AC_MSG_ERROR([*** asr.h missing - please install first or check config.log ***])],
-[#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>])
-AC_CHECK_LIB([asr], [asr_resolver], ,
-	[
-		saved_CPPFLAGS="$CPPFLAGS"
-		saved_LDFLAGS="$LDFLAGS"
-		save_LIBS="$LIBS"
-		dnl Check default asr install dir
-		if test -n "${need_dash_r}"; then
-			LDFLAGS="-L/usr/local/lib -R/usr/local/lib ${saved_LDFLAGS}"
-		else
-			LDFLAGS="-L/usr/local/lib ${saved_LDFLAGS}"
-		fi
-		CPPFLAGS="-I/usr/local/include ${saved_CPPFLAGS}"
-# don't add -lasr to LIBS, it's only added when needed
-#		LIBS="$LIBS -lasr"
-		AC_TRY_LINK_FUNC([asr_resolver], ,
-			[
-				AC_MSG_ERROR([*** libasr missing - please install first or check config.log ***])
-			]
-		)
-	]
-)
-
-LIBS="$LIBS ${SMTPDLIBS}"
-##end of chl
 
 AC_MSG_CHECKING([if RES_USE_EDNS0 is defined in resolv.h])
 AC_EGREP_CPP(HAVE_RES_USE_EDNS0, [
