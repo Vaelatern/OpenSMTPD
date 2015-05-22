@@ -1123,46 +1123,6 @@ AC_RUN_IFELSE(
 	]
 )
 
-AC_ARG_WITH([openssl-header-check],
-	[  --without-libressl-header-check Disable LibreSSL version consistency check],
-	[  if test "x$withval" = "xno" ; then
-		openssl_check_nonfatal=1
-	   fi
-	]
-)
-
-# Sanity check OpenSSL headers
-AC_MSG_CHECKING([whether LibreSSL's headers match the library])
-AC_RUN_IFELSE(
-	[AC_LANG_PROGRAM([[
-#include <string.h>
-#include <openssl/opensslv.h>
-	]], [[
-	exit(SSLeay() == OPENSSL_VERSION_NUMBER ? 0 : 1);
-	]])],
-	[
-		AC_MSG_RESULT([yes])
-	],
-	[
-		AC_MSG_RESULT([no])
-		if test "x$openssl_check_nonfatal" = "x"; then
-			AC_MSG_ERROR([Your LibreSSL headers do not match your
-library. Check config.log for details.
-If you are sure your installation is consistent, you can disable the check
-by running "./configure --without-openssl-header-check".
-Also see contrib/findssl.sh for help identifying header/library mismatches.
-])
-		else
-			AC_MSG_WARN([Your LibreSSL headers do not match your
-library. Check config.log for details.
-Also see contrib/findssl.sh for help identifying header/library mismatches.])
-		fi
-	],
-	[
-		AC_MSG_WARN([cross compiling: not checking])
-	]
-)
-
 AC_MSG_CHECKING([if programs using LibreSSL functions will link])
 AC_LINK_IFELSE(
 	[AC_LANG_PROGRAM([[ #include <openssl/evp.h> ]],
