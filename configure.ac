@@ -84,9 +84,13 @@ AC_SUBST([LD])
 
 AC_C_INLINE
 
-AC_CHECK_DECL([LLONG_MAX], [have_llong_max=1], , [#include <limits.h>])
-#l108
+# check generic headers
+INCLUDE_CHECKS
 
+# check generic defines
+DEFINE_CHECKS
+
+# check compiler environment
 COMPILER_CHECKS
 
 AC_ARG_WITH([rpath],
@@ -199,50 +203,6 @@ if test "x$use_pie" != "xno"; then
 	fi
 fi
 
-
-
-
-AC_CHECK_HEADERS([ \
-	crypt.h \
-	dirent.h \
-	fcntl.h \
-	getopt.h \
-	limits.h \
-	maillock.h \
-	mach/mach_time.h \
-	ndir.h \
-	netdb.h \
-	pam/pam_appl.h \
-	paths.h \
-	security/pam_appl.h \
-	shadow.h \
-	sys/cdefs.h \
-	sys/dir.h \
-	sys/file.h \
-	sys/mount.h \
-	sys/ndir.h \
-	sys/pstat.h \
-	sys/statfs.h \
-	sys/time.h \
-	sys/un.h \
-	time.h \
-	ucred.h \
-	util.h \
-	utime.h \
-	vis.h
-])
-
-#l411
-# login_cap.h requires sys/types.h on NetBSD
-AC_CHECK_HEADERS([login_cap.h], [], [], [
-#include <sys/types.h>
-])
-
-# older BSDs need sys/param.h before sys/mount.h
-AC_CHECK_HEADERS([sys/mount.h], [], [], [
-#include <sys/param.h>
-])
-#l419
 
 #l432 (customized)
 # Check for some target-specific stuff
@@ -580,7 +540,6 @@ AC_CHECK_FUNCS([utimes],
 )
 
 dnl    Checks for libutil functions
-AC_CHECK_HEADERS([bsd/libutil.h libutil.h])
 AC_SEARCH_LIBS([fmt_scaled], [util bsd])
 AC_SEARCH_LIBS([scan_scaled], [util bsd])
 AC_CHECK_FUNCS([fmt_scaled scan_scaled])
