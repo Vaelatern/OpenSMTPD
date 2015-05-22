@@ -58,4 +58,5 @@ AC_CHECK_FUNCS([ \
 	AC_SEARCH_LIBS([clock_gettime], [rt],
 		[AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Have clock_gettime])])
 
-}]
+}])
+
