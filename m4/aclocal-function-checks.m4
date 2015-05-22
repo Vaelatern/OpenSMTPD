@@ -52,7 +52,7 @@ AC_CHECK_FUNCS([ \
 	truncate \
 	vasprintf \
 	vsnprintf \
-	waitpid \
+	waitpid
 ])
 
 	AC_SEARCH_LIBS([clock_gettime], [rt],
