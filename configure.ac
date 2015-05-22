@@ -88,28 +88,28 @@ AC_CHECK_DECL([LLONG_MAX], [have_llong_max=1], , [#include <limits.h>])
 #l108
 
 if test "$GCC" = "yes" || test "$GCC" = "egcs"; then
-	OSSH_CHECK_CFLAG_COMPILE([-Qunused-arguments])
-	OSSH_CHECK_CFLAG_COMPILE([-Wunknown-warning-option])
-	OSSH_CHECK_CFLAG_COMPILE([-Wall])
-	OSSH_CHECK_CFLAG_COMPILE([-Wpointer-arith])
-	OSSH_CHECK_CFLAG_COMPILE([-Wuninitialized])
-	OSSH_CHECK_CFLAG_COMPILE([-Wsign-compare])
-	OSSH_CHECK_CFLAG_COMPILE([-Wformat-security])
-	OSSH_CHECK_CFLAG_COMPILE([-Wsizeof-pointer-memaccess])
-	OSSH_CHECK_CFLAG_COMPILE([-Wpointer-sign], [-Wno-pointer-sign])
-	OSSH_CHECK_CFLAG_COMPILE([-Wunused-result], [-Wno-unused-result])
-	OSSH_CHECK_CFLAG_COMPILE([-fno-strict-aliasing])
-	OSSH_CHECK_CFLAG_COMPILE([-D_FORTIFY_SOURCE=2])
+	OPENSMTPD_CHECK_CFLAG_COMPILE([-Qunused-arguments])
+	OPENSMTPD_CHECK_CFLAG_COMPILE([-Wunknown-warning-option])
+	OPENSMTPD_CHECK_CFLAG_COMPILE([-Wall])
+	OPENSMTPD_CHECK_CFLAG_COMPILE([-Wpointer-arith])
+	OPENSMTPD_CHECK_CFLAG_COMPILE([-Wuninitialized])
+	OPENSMTPD_CHECK_CFLAG_COMPILE([-Wsign-compare])
+	OPENSMTPD_CHECK_CFLAG_COMPILE([-Wformat-security])
+	OPENSMTPD_CHECK_CFLAG_COMPILE([-Wsizeof-pointer-memaccess])
+	OPENSMTPD_CHECK_CFLAG_COMPILE([-Wpointer-sign], [-Wno-pointer-sign])
+	OPENSMTPD_CHECK_CFLAG_COMPILE([-Wunused-result], [-Wno-unused-result])
+	OPENSMTPD_CHECK_CFLAG_COMPILE([-fno-strict-aliasing])
+	OPENSMTPD_CHECK_CFLAG_COMPILE([-D_FORTIFY_SOURCE=2])
     if test "x$use_toolchain_hardening" = "x1"; then
-	OSSH_CHECK_LDFLAG_LINK([-Wl,-z,relro])
-	OSSH_CHECK_LDFLAG_LINK([-Wl,-z,now])
-	OSSH_CHECK_LDFLAG_LINK([-Wl,-z,noexecstack])
+	OPENSMTPD_CHECK_LDFLAG_LINK([-Wl,-z,relro])
+	OPENSMTPD_CHECK_LDFLAG_LINK([-Wl,-z,now])
+	OPENSMTPD_CHECK_LDFLAG_LINK([-Wl,-z,noexecstack])
 	# NB. -ftrapv expects certain support functions to be present in
 	# the compiler library (libgcc or similar) to detect integer operations
 	# that can overflow. We must check that the result of enabling it
 	# actually links. The test program compiled/linked includes a number
 	# of integer operations that should exercise this.
-	OSSH_CHECK_CFLAG_LINK([-ftrapv])
+	OPENSMTPD_CHECK_CFLAG_LINK([-ftrapv])
     fi
 	AC_MSG_CHECKING([gcc version])
 	GCC_VER=`$CC -v 2>&1 | $AWK '/gcc version /{print $3}'`
@@ -299,8 +299,8 @@ fi
 if test "x$use_pie" != "xno"; then
 	SAVED_CFLAGS="$CFLAGS"
 	SAVED_LDFLAGS="$LDFLAGS"
-	OSSH_CHECK_CFLAG_COMPILE([-fPIE])
-	OSSH_CHECK_LDFLAG_LINK([-pie])
+	OPENSMTPD_CHECK_CFLAG_COMPILE([-fPIE])
+	OPENSMTPD_CHECK_LDFLAG_LINK([-pie])
 	# We use both -fPIE and -pie or neither.
 	AC_MSG_CHECKING([whether both -fPIE and -pie are supported])
 	if echo "x $CFLAGS"  | grep ' -fPIE' >/dev/null 2>&1 && \
