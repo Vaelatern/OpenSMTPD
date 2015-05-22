@@ -580,69 +580,7 @@ fi
 #l1525
 #l1570
 
-#l1572 (customized)
-dnl    Checks for library functions. Please keep in alphabetical order
-AC_CHECK_FUNCS([ \
-	arc4random \
-	arc4random_buf \
-	arc4random_stir \
-	arc4random_uniform \
-	asprintf \
-	b64_ntop \
-	__b64_ntop \
-	b64_pton \
-	__b64_pton \
-	bcopy \
-	chflags \
-	closefrom \
-	dirfd \
-	dirname \
-	endgrent \
-	explicit_bzero \
-	fgetln \
-	freeaddrinfo \
-	getaddrinfo \
-	getnameinfo \
-	getopt \
-	getpeereid \
-	getspnam \
-	inet_aton \
-	inet_ntoa \
-	inet_ntop \
-	isblank \
-	memmove \
-	nsleep \
-	pidfile \
-	pw_dup \
-	reallocarray \
-	setenv \
-	setlinebuf \
-	setproctitle \
-	setregid \
-	setreuid \
-	setsid \
-	sigaction \
-	socketpair \
-	strdup \
-	strerror \
-	strlcat \
-	strlcpy \
-	strnvis \
-	strmode \
-	strtonum \
-	sysconf \
-	tcgetpgrp \
-	truncate \
-	vasprintf \
-	vsnprintf \
-	waitpid \
-])
-#l1685
-
-#l1715
-AC_SEARCH_LIBS([clock_gettime], [rt],
-	[AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [Have clock_gettime])])
-#l1719
+FUNCTION_CHECKS
 
 #l1723
 AC_CHECK_DECL([strsep],
