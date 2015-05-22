@@ -114,5 +114,15 @@ __attribute__((__unused__)) static void foo(void){return;}]],
 if test "x$no_attrib_nonnull" != "x1" ; then
 	AC_DEFINE([HAVE_ATTRIBUTE__NONNULL__], [1], [Have attribute nonnull])
 fi
+
+AC_MSG_CHECKING([compiler and flags for sanity])
+AC_RUN_IFELSE([AC_LANG_PROGRAM([[ #include <stdio.h> ]], [[ exit(0); ]])],
+	[	AC_MSG_RESULT([yes]) ],
+	[
+		AC_MSG_RESULT([no])
+		AC_MSG_ERROR([*** compiler cannot create working executables, check config.log ***])
+	],
+	[	AC_MSG_WARN([cross compiling: not checking compiler sanity]) ]
+)
 }])
 

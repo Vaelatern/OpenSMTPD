@@ -253,16 +253,6 @@ HOST_CHECKS
 AC_SUBST([ASR_LIB])
 
 
-AC_MSG_CHECKING([compiler and flags for sanity])
-AC_RUN_IFELSE([AC_LANG_PROGRAM([[ #include <stdio.h> ]], [[ exit(0); ]])],
-	[	AC_MSG_RESULT([yes]) ],
-	[
-		AC_MSG_RESULT([no])
-		AC_MSG_ERROR([*** compiler cannot create working executables, check config.log ***])
-	],
-	[	AC_MSG_WARN([cross compiling: not checking compiler sanity]) ]
-)
-
 dnl Checks for header files.
 # Checks for libraries.
 AC_CHECK_FUNC([setsockopt], , [AC_CHECK_LIB([socket], [setsockopt])])
