@@ -91,9 +91,7 @@ smtpd_CFLAGS+=		-DCA_FILE=\"$(CA_FILE)\"
 AM_CPPFLAGS=		-I$(smtpd_srcdir)	\
 			-I$(compat_srcdir)
 
-LIBCOMPAT=		$(top_builddir)/openbsd-compat/libopenbsd-compat.a
-
-LDADD=			$(LIBCOMPAT) $(DB_LIB) $(ASR_LIB)
+LDADD=			$(DB_LIB) $(ASR_LIB)
 
 # need to define _GNU_SOURCE to get:
 # EAI_NODATA defined

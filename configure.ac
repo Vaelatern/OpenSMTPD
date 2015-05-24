@@ -2672,6 +2672,35 @@ AC_SUBST([DB_LIB])
 
 LIBS="$save_LIBS"
 
+LIBOPENBSD_LIB=-lopenbsd
+AC_ARG_WITH([libopenbsd],
+	[  --with-libopenbsd=PATH		Use libopenbsd in PATH],
+	[ if test "x$withval" = "xno" ; then
+		AC_MSG_ERROR([*** libopenbsd is required ***])
+	  elif test "x$withval" != "xyes"; then
+		if test -d "$withval/lib"; then
+			if test -n "${need_dash_r}"; then
+				LDFLAGS="-L${withval}/lib -R${withval}/lib ${LDFLAGS}"
+			else
+				LDFLAGS="-L${withval}/lib ${LDFLAGS}"
+			fi
+		else
+			if test -n "${need_dash_r}"; then
+				LDFLAGS="-L${withval} -R${withval} ${LDFLAGS}"
+			else
+				LDFLAGS="-L${withval} ${LDFLAGS}"
+			fi
+		fi
+		if test -d "$withval/include"; then
+			CPPFLAGS="-I${withval}/include ${CPPFLAGS}"
+		else
+			CPPFLAGS="-I${withval} ${CPPFLAGS}"
+		fi
+	fi ]
+)
+LIBS="$LIBS $LIBOPENBSD_LIB"
+
+
 # Search for asr (based on zlib checks)
 dnl asr is required
 AC_ARG_WITH([asr],
@@ -2774,7 +2803,6 @@ AC_ARG_WITH([mailwrapper],
 AM_CONDITIONAL([HAVE_MAILWRAPPER], [test $use_mailwrapper = 1])
 
 AC_CONFIG_FILES([Makefile
-		openbsd-compat/Makefile
 		mk/Makefile
 		mk/smtpd/Makefile
 		mk/smtpctl/Makefile

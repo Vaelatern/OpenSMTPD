@@ -31,12 +31,7 @@ smtpctl_CFLAGS=		-DNO_IO
 smtpctl_CFLAGS+=	-DPATH_GZCAT=\"$(ZCAT)\" \
 			-DPATH_ENCRYPT=\"$(pkglibexecdir)/encrypt\"
 
-AM_CPPFLAGS=		-I$(top_srcdir)/smtpd			\
-			-I$(top_srcdir)/openbsd-compat
-
-LIBCOMPAT=		$(top_builddir)/openbsd-compat/libopenbsd-compat.a
-
-LDADD=			$(LIBCOMPAT)
+AM_CPPFLAGS=		-I$(top_srcdir)/smtpd
 
 # need to define _GNU_SOURCE to get:
 # EAI_NODATA defined
