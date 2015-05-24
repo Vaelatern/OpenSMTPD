@@ -2692,9 +2692,9 @@ AC_ARG_WITH([libopenbsd],
 			fi
 		fi
 		if test -d "$withval/include"; then
-			CPPFLAGS="-I${withval}/include ${CPPFLAGS}"
+			CPPFLAGS="-I${withval}/include -I${withval}/include/libopenbsd ${CPPFLAGS}"
 		else
-			CPPFLAGS="-I${withval} ${CPPFLAGS}"
+			CPPFLAGS="-I${withval} -I${withval}/libopenbsd ${CPPFLAGS}"
 		fi
 	fi ]
 )

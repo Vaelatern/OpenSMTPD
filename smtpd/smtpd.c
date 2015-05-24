@@ -18,7 +18,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "includes.h"
+#include <libopenbsd.h>
 
 #include <sys/file.h> /* Needed for flock */
 #include <sys/types.h>

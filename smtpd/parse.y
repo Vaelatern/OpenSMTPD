@@ -22,7 +22,7 @@
  */
 
 %{
-#include "includes.h"
+#include <libopenbsd.h>
 
 #include <sys/types.h>
 #include <sys/time.h>

@@ -16,7 +16,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "includes.h"
+#include <libopenbsd.h>
 
 #include <stdio.h>
 #include <limits.h>
